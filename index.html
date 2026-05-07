@@ -1,0 +1,957 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,user-scalable=no">
+<title>QuantEdge</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<style>
+*{box-sizing:border-box;margin:0;padding:0;}
+:root{
+  --bg:#080B0F;--surface:#0D1117;--border:#1C2333;
+  --text:#E6EDF3;--dim:#8B949E;--muted:#484F58;
+  --green:#3FB950;--red:#F85149;--yellow:#D29922;
+  --blue:#58A6FF;--purple:#BC8CFF;
+  --green-bg:#0D1F12;--red-bg:#1F0D0D;
+}
+body{background:var(--bg);color:var(--text);font-family:'JetBrains Mono',monospace;min-height:100vh;padding:12px;}
+
+/* ── HEADER ── */
+.header{display:grid;grid-template-columns:1fr auto;gap:12px;align-items:start;
+  background:var(--surface);border:1px solid var(--border);border-radius:10px;
+  padding:14px 16px;margin-bottom:10px;}
+.nifty-price{font-size:28px;font-weight:700;letter-spacing:-1px;line-height:1;}
+.nifty-direction{font-size:14px;margin-left:6px;}
+.nifty-up{color:var(--green);}
+.nifty-down{color:var(--red);}
+.header-meta{display:flex;flex-wrap:wrap;gap:16px;margin-top:6px;}
+.meta-item{display:flex;flex-direction:column;gap:1px;}
+.meta-label{font-size:9px;color:var(--muted);letter-spacing:1.5px;text-transform:uppercase;}
+.meta-value{font-size:13px;font-weight:500;color:var(--text);}
+.pnl-pos{color:var(--green);}
+.pnl-neg{color:var(--red);}
+.pnl-neu{color:var(--dim);}
+.header-right{display:flex;flex-direction:column;gap:8px;align-items:flex-end;}
+.status-pill{display:inline-flex;align-items:center;gap:6px;padding:4px 10px;
+  border-radius:20px;font-size:10px;font-weight:600;letter-spacing:1px;border:1px solid;}
+.pill-connected{background:#0D1F12;color:var(--green);border-color:#1F4428;}
+.pill-scanning{background:#0D1620;color:var(--blue);border-color:#1F3A5F;}
+.pill-trading{background:#1A0F1F;color:var(--purple);border-color:#3D2257;}
+.pill-disconnected{background:#1A1A1A;color:var(--dim);border-color:var(--border);}
+.dot{width:6px;height:6px;border-radius:50%;background:currentColor;animation:blink 1.4s infinite;}
+@keyframes blink{0%,100%{opacity:1}50%{opacity:.3}}
+
+/* ── CONNECT ── */
+.connect-panel{background:var(--surface);border:1px solid var(--border);border-radius:10px;
+  padding:24px;margin-bottom:10px;text-align:center;}
+.connect-title{font-size:11px;color:var(--dim);letter-spacing:2px;text-transform:uppercase;margin-bottom:16px;}
+.connect-form{display:flex;flex-direction:column;gap:10px;max-width:480px;margin:0 auto;}
+input{background:var(--bg);border:1px solid var(--border);color:var(--text);
+  font-family:'JetBrains Mono',monospace;font-size:12px;padding:10px 12px;
+  border-radius:7px;outline:none;transition:border .15s;width:100%;}
+input:focus{border-color:var(--blue);}
+input::placeholder{color:var(--muted);}
+
+/* ── BUTTONS ── */
+button{font-family:'JetBrains Mono',monospace;font-size:11px;font-weight:600;
+  padding:9px 16px;border-radius:7px;border:none;cursor:pointer;
+  transition:opacity .15s,transform .1s;letter-spacing:.5px;}
+button:active{transform:scale(.97);}
+button:disabled{opacity:.35;cursor:not-allowed;}
+.btn-primary{background:var(--blue);color:#0D1117;}
+.btn-danger{background:transparent;border:1px solid var(--red);color:var(--red);}
+.btn-ghost{background:transparent;border:1px solid var(--border);color:var(--dim);}
+
+/* ── STATUS CARD ── */
+.status-card{background:var(--surface);border:1px solid var(--border);border-radius:10px;
+  padding:14px 16px;margin-bottom:10px;}
+.status-card-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;}
+.regime-badge{font-size:10px;letter-spacing:1px;padding:3px 8px;border-radius:4px;font-weight:600;}
+.regime-trending{background:#0D1F12;color:var(--green);}
+.regime-developing{background:#1A1500;color:var(--yellow);}
+.regime-choppy{background:#1A0D0D;color:var(--red);}
+.score-row{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:10px;}
+.score-box{background:var(--bg);border:1px solid var(--border);border-radius:6px;padding:8px 10px;}
+.score-label{font-size:9px;color:var(--muted);letter-spacing:1px;text-transform:uppercase;}
+.score-val{font-size:20px;font-weight:700;margin-top:2px;}
+.score-ce{color:var(--green);}
+.score-pe{color:var(--red);}
+.reasons-list{font-size:10px;color:var(--dim);line-height:1.8;}
+.scan-timer{font-size:10px;color:var(--muted);text-align:right;margin-top:8px;}
+
+/* ── POSITION CARD ── */
+.position-card{background:var(--surface);border-radius:10px;padding:14px 16px;margin-bottom:10px;border:1px solid;}
+.pos-ce{border-color:#1F4428;}
+.pos-pe{border-color:#4A1515;}
+.pos-header{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:12px;}
+.pos-name{font-size:14px;font-weight:700;}
+.pos-expiry{font-size:10px;color:var(--dim);margin-top:3px;}
+.pos-pnl{font-size:20px;font-weight:700;text-align:right;}
+.pos-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:10px;margin-bottom:12px;}
+.pos-metric-label{font-size:9px;color:var(--muted);letter-spacing:1px;text-transform:uppercase;margin-bottom:3px;}
+.pos-metric-val{font-size:14px;font-weight:600;}
+.pos-sl-val{color:var(--red);}
+.pos-target-val{color:var(--green);}
+.pos-live-val{color:var(--blue);}
+/* SL proximity bar */
+.sl-bar{height:3px;background:var(--border);border-radius:2px;margin-bottom:12px;overflow:hidden;}
+.sl-fill{height:100%;border-radius:2px;transition:width .5s,background .5s;}
+.sl-danger{background:var(--red);}
+.sl-warn{background:var(--yellow);}
+.sl-safe{background:var(--green);}
+
+/* ── LAST TRADE ── */
+.last-trade{background:var(--surface);border:1px solid var(--border);border-radius:10px;
+  padding:12px 16px;margin-bottom:10px;font-size:11px;}
+.last-trade-title{font-size:9px;color:var(--muted);letter-spacing:1.5px;text-transform:uppercase;margin-bottom:8px;}
+.last-trade-row{display:flex;justify-content:space-between;align-items:center;}
+.last-trade-name{color:var(--text);font-weight:600;}
+.last-trade-meta{color:var(--dim);font-size:10px;margin-top:2px;}
+
+/* ── LOGS ── */
+.logs-section{background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:12px 14px;}
+.logs-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;}
+.logs-title{font-size:9px;color:var(--muted);letter-spacing:1.5px;text-transform:uppercase;}
+.log-entry{display:grid;grid-template-columns:55px 1fr;gap:8px;padding:4px 0;
+  border-bottom:1px solid var(--border);font-size:10px;line-height:1.5;}
+.log-entry:last-child{border-bottom:none;}
+.log-time{color:var(--muted);flex-shrink:0;}
+.log-info{color:var(--text);}
+.log-signal{color:var(--blue);font-weight:600;}
+.log-trade{color:var(--green);}
+.log-warn{color:var(--yellow);}
+.log-error{color:var(--red);}
+
+/* ── WAITING / EMPTY ── */
+.waiting{text-align:center;padding:32px;color:var(--muted);font-size:12px;}
+
+@media(max-width:480px){
+  .nifty-price{font-size:22px;}
+  .pos-grid{grid-template-columns:repeat(2,1fr);}
+  .header{grid-template-columns:1fr;}
+  .header-right{align-items:flex-start;}
+}
+</style>
+</head>
+<body>
+<div id="app"></div>
+
+<script>
+'use strict';
+
+// ═══════════════════════════════════════════════════════════════
+// SIGNAL ENGINE (inline — from signal_engine.js)
+// ═══════════════════════════════════════════════════════════════
+
+function calcEMA(closes, period) {
+  if (closes.length < period) return null;
+  let ema = closes.slice(0, period).reduce((a, b) => a + b, 0) / period;
+  const k = 2 / (period + 1);
+  for (let i = period; i < closes.length; i++) ema = closes[i] * k + ema * (1 - k);
+  return Math.round(ema * 100) / 100;
+}
+
+function calcATR(candles, period) {
+  if (candles.length < period + 1) return null;
+  const trs = [];
+  for (let i = 1; i < candles.length; i++) {
+    const h = candles[i][2], l = candles[i][3], pc = candles[i-1][4];
+    trs.push(Math.max(h - l, Math.abs(h - pc), Math.abs(l - pc)));
+  }
+  const recent = trs.slice(-period);
+  return Math.round(recent.reduce((a, b) => a + b, 0) / recent.length * 100) / 100;
+}
+
+function calcVWAP(candles) {
+  if (!candles || candles.length === 0) return null;
+  let pv = 0, vol = 0;
+  for (const c of candles) {
+    const tp = (c[2] + c[3] + c[4]) / 3;
+    const v  = c[5] || 1;
+    pv += tp * v; vol += v;
+  }
+  return Math.round(pv / vol * 100) / 100;
+}
+
+function emaSlope(closes, period) {
+  if (closes.length < period + 3) return 'FLAT';
+  const e3 = calcEMA(closes, period);
+  const e2 = calcEMA(closes.slice(0, -1), period);
+  const e1 = calcEMA(closes.slice(0, -2), period);
+  if (!e1 || !e2 || !e3) return 'FLAT';
+  if (e3 > e2 && e2 > e1) return 'UP';
+  if (e3 < e2 && e2 < e1) return 'DOWN';
+  return 'FLAT';
+}
+
+function analyseMarket(d) {
+  const { spot, todayOpen, prevClose, candles5m, dailyPnl = 0, tradeCount = 0, lastLoss = null } = d;
+  const reasons = [], details = {};
+
+  if (!spot || !todayOpen || !candles5m)
+    return { signal: null, reason: 'Missing market data', reasons: [], score: 0 };
+
+  if (candles5m.length < 6)
+    return { signal: null, reason: 'Waiting for 9:45 AM (' + candles5m.length + '/6 candles)', reasons: [], score: 0 };
+
+  if (tradeCount >= 2)
+    return { signal: null, reason: 'Max 2 trades reached for today', reasons: [], score: 0 };
+
+  if (lastLoss) {
+    const mins = (Date.now() - lastLoss) / 60000;
+    if (mins < 30)
+      return { signal: null, reason: 'Cooling down — ' + Math.ceil(30 - mins) + 'min remaining', reasons: [], score: 0 };
+  }
+
+  const now = new Date();
+  const ist = (now.getUTCHours() * 60 + now.getUTCMinutes() + 330) % 1440;
+  if (ist < 565) return { signal: null, reason: 'Market not open yet', reasons: [], score: 0 };
+  if (ist > 840) return { signal: null, reason: 'No new trades after 2:00 PM', reasons: [], score: 0 };
+  if (dailyPnl <= -3000)
+    return { signal: null, reason: 'Daily loss limit ₹3,000 hit — done for today', reasons: [], score: 0 };
+
+  const closes = candles5m.map(c => c[4]);
+  let ceScore = 0, peScore = 0;
+
+  // Check 1: ATR
+  const atr = calcATR(candles5m, 6);
+  details.atr = atr;
+  if (!atr) return { signal: null, reason: 'ATR calculation failed', reasons: [], score: 0 };
+  if (atr < 15)
+    return { signal: null, reason: 'Choppy market — ATR ' + atr + ' < 15 points', reasons: ['ATR ' + atr + ' — staying out'], score: 0, regime: 'CHOPPY', details };
+  const atrScore = Math.min(20, Math.round((atr / 35) * 20));
+  ceScore += atrScore; peScore += atrScore;
+  reasons.push('ATR ' + atr + 'pts — market active (+' + atrScore + ')');
+
+  // Check 2: Candle momentum
+  const last3 = candles5m.slice(-3);
+  const green = last3.filter(c => c[4] > c[1]).length;
+  const red   = last3.filter(c => c[4] < c[1]).length;
+  details.greenCandles = green; details.redCandles = red;
+  if (green >= 2) { const s = green === 3 ? 20 : 12; ceScore += s; reasons.push(green + '/3 green candles (+' + s + ')'); }
+  else if (red >= 2) { const s = red === 3 ? 20 : 12; peScore += s; reasons.push(red + '/3 red candles (+' + s + ')'); }
+  else reasons.push('Mixed candles — no momentum');
+
+  // Check 3: EMA
+  if (closes.length >= 21) {
+    const ema9 = calcEMA(closes, 9), ema21 = calcEMA(closes, 21);
+    const slope = emaSlope(closes, 9);
+    details.ema9 = ema9; details.ema21 = ema21; details.slope = slope;
+    if (ema9 && ema21) {
+      const diffPct = Math.abs(ema9 - ema21) / ema21 * 100;
+      if (ema9 > ema21 && slope === 'UP')  { const s = Math.min(20, Math.round(diffPct*50)); ceScore += s; reasons.push('EMA bullish (+' + s + ')'); }
+      else if (ema9 < ema21 && slope === 'DOWN') { const s = Math.min(20, Math.round(diffPct*50)); peScore += s; reasons.push('EMA bearish (+' + s + ')'); }
+      else reasons.push('EMA flat');
+    }
+  }
+
+  // Check 4: VWAP
+  const vwap = calcVWAP(candles5m);
+  details.vwap = vwap;
+  if (vwap) {
+    const diff = Math.abs(spot - vwap) / vwap * 100;
+    if (diff < 0.10) { ceScore -= 5; peScore -= 5; reasons.push('Near VWAP ₹' + vwap + ' — indecision (-5)'); }
+    else if (spot > vwap) { const s = Math.min(20, Math.round(diff*20)); ceScore += s; reasons.push('Above VWAP ₹' + vwap + ' (+' + s + ')'); }
+    else { const s = Math.min(20, Math.round(diff*20)); peScore += s; reasons.push('Below VWAP ₹' + vwap + ' (+' + s + ')'); }
+  }
+
+  // Check 5: Gap and open bias
+  if (prevClose) {
+    const gapPct = (todayOpen - prevClose) / prevClose * 100;
+    const holding = gapPct > 0 ? spot > todayOpen * 0.998 : spot < todayOpen * 1.002;
+    details.gapPct = Math.round(gapPct * 100) / 100;
+    if (Math.abs(gapPct) > 0.3 && holding) {
+      if (gapPct > 0) { ceScore += 15; reasons.push('Gap up ' + Math.abs(gapPct).toFixed(2) + '% holding (+15)'); }
+      else            { peScore += 15; reasons.push('Gap down ' + Math.abs(gapPct).toFixed(2) + '% holding (+15)'); }
+    } else if (Math.abs(gapPct) > 0.3 && !holding) {
+      ceScore -= 10; peScore -= 10; reasons.push('Gap reversed — dangerous (-10)');
+    } else {
+      if (spot > todayOpen) { ceScore += 8; reasons.push('Above open (+8)'); }
+      else { peScore += 8; reasons.push('Below open (+8)'); }
+    }
+  }
+
+  details.ceScore = ceScore; details.peScore = peScore;
+  const top = Math.max(ceScore, peScore);
+  const sep = Math.abs(ceScore - peScore);
+  const regime = top >= 65 ? 'TRENDING' : top >= 50 ? 'DEVELOPING' : 'CHOPPY';
+
+  if (ceScore >= 65 && sep >= 15)
+    return { signal: 'CE', score: Math.min(ceScore, 97), reasons, regime, details };
+  if (peScore >= 65 && sep >= 15)
+    return { signal: 'PE', score: Math.min(peScore, 97), reasons, regime, details };
+
+  reasons.push('Score too low — CE:' + ceScore + ' PE:' + peScore + ' (need 65 + 15pt lead)');
+  return { signal: null, reason: 'No clear signal', reasons, regime, score: top, details };
+}
+
+// ═══════════════════════════════════════════════════════════════
+// APP STATE
+// ═══════════════════════════════════════════════════════════════
+
+const state = {
+  token:        null,
+  connected:    false,
+  capital:      0,
+  nifty:        0,
+  prevNifty:    0,
+  todayOpen:    0,
+  prevClose:    0,
+  candles5m:    [],
+  vwap:         0,
+  dailyPnl:     0,
+  tradeCount:   0,
+  lastLoss:     null,
+  position:     null,   // open position or null
+  lastTrade:    null,   // last closed trade
+  lastSignal:   null,   // last analyseMarket() result
+  logs:         [],
+  scanCountdown: 0,
+  posTimer:     null,
+  scanTimer:    null,
+  inTrade:      false,  // prevent concurrent orders
+};
+
+// ═══════════════════════════════════════════════════════════════
+// UTILITIES
+// ═══════════════════════════════════════════════════════════════
+
+const PROXY = '/api';
+const LOT   = 65;
+
+function istTime() {
+  const ist = new Date(Date.now() + 330 * 60000);
+  return ist.toISOString().slice(11, 19);
+}
+
+function fmt(n) { return '₹' + Math.round(n).toLocaleString('en-IN'); }
+function fmtPnl(n) { return (n >= 0 ? '+' : '') + fmt(n); }
+
+function log(msg, level = 'info') {
+  state.logs.unshift({ time: istTime(), msg, level });
+  if (state.logs.length > 100) state.logs.pop();
+  render();
+}
+
+async function api(action, payload = {}) {
+  const r = await fetch(PROXY, {
+    method:  'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body:    JSON.stringify({ action, token: state.token, payload }),
+  });
+  return r.json();
+}
+
+function sleep(ms) { return new Promise(r => setTimeout(r, ms)); }
+
+function istMins() {
+  const now = new Date();
+  return (now.getUTCHours() * 60 + now.getUTCMinutes() + 330) % 1440;
+}
+
+// Find nearest available expiry from today
+async function getNextExpiry() {
+  try {
+    const r = await api('option_chain', {});
+    const contracts = r?.data || [];
+    const today = new Date().toISOString().slice(0, 10);
+    const dates  = [...new Set(contracts.map(c => c.expiry))].sort();
+    return dates.find(d => d >= today) || dates[0] || null;
+  } catch(e) { return null; }
+}
+
+// ═══════════════════════════════════════════════════════════════
+// CONNECT
+// ═══════════════════════════════════════════════════════════════
+
+async function connect() {
+  const token   = document.getElementById('tokenInput').value.trim();
+  const capital = parseInt(document.getElementById('capitalInput').value) || 17000;
+  if (!token) { alert('Paste your Upstox access token'); return; }
+
+  state.token = token;
+  log('Connecting...', 'info');
+
+  // Get real balance
+  try {
+    const r = await api('fund_margin');
+    const bal = r?.data?.equity?.available_margin || 0;
+    state.capital = bal > 0 ? bal : capital;
+    log('Balance: ' + fmt(state.capital), 'trade');
+  } catch(e) {
+    state.capital = capital;
+    log('Balance fetch failed — using ' + fmt(capital), 'warn');
+  }
+
+  state.connected = true;
+  log('Connected. Starting scan engine...', 'trade');
+  startScanEngine();
+  startPositionMonitor();
+  render();
+}
+
+function disconnect() {
+  if (state.scanTimer)  clearInterval(state.scanTimer);
+  if (state.posTimer)   clearInterval(state.posTimer);
+  state.connected = false;
+  state.token = null;
+  render();
+}
+
+// ═══════════════════════════════════════════════════════════════
+// MARKET DATA FETCH
+// ═══════════════════════════════════════════════════════════════
+
+async function fetchMarketData() {
+  try {
+    // 1. Spot + OHLC
+    const q = await api('market_quote');
+    const qd = q?.data || {};
+    const niftyData = qd['NSE_INDEX|Nifty 50'] || qd['NSE_INDEX:Nifty 50'] || Object.values(qd)[0];
+    if (niftyData) {
+      state.prevNifty = state.nifty;
+      state.nifty     = niftyData.last_price || state.nifty;
+      state.todayOpen = niftyData.ohlc?.open  || state.todayOpen;
+    }
+
+    // 2. 5-min candles (v3)
+    const cr = await api('candles_5min');
+    const candles = cr?.data?.candles || [];
+    if (candles.length > 0) state.candles5m = candles.slice(-30);
+
+    // 3. Previous day close
+    const pr = await api('prev_day_ohlc');
+    const pCandles = pr?.data?.candles || [];
+    if (pCandles.length >= 2) {
+      // pCandles[0] = today, pCandles[1] = yesterday
+      state.prevClose = pCandles[1][4];
+    }
+
+    // 4. VWAP from candles
+    state.vwap = calcVWAP(state.candles5m) || state.nifty;
+
+  } catch(e) {
+    log('Market data error: ' + e.message, 'error');
+  }
+}
+
+// ═══════════════════════════════════════════════════════════════
+// SCAN ENGINE — runs every 60 seconds
+// ═══════════════════════════════════════════════════════════════
+
+function startScanEngine() {
+  if (state.scanTimer) clearInterval(state.scanTimer);
+
+  const run = async () => {
+    if (!state.connected || !state.token) return;
+
+    await fetchMarketData();
+
+    // Don't scan if position is open
+    if (state.position) { render(); return; }
+
+    const result = analyseMarket({
+      spot:       state.nifty,
+      todayOpen:  state.todayOpen,
+      prevClose:  state.prevClose,
+      candles5m:  state.candles5m,
+      dailyPnl:   state.dailyPnl,
+      tradeCount: state.tradeCount,
+      lastLoss:   state.lastLoss,
+    });
+
+    state.lastSignal = result;
+
+    if (result.signal && !state.inTrade) {
+      log('SIGNAL: ' + result.signal + ' score:' + result.score + '% | ' + result.reasons.slice(0,3).join(', '), 'signal');
+      await enterTrade(result);
+    }
+
+    render();
+  };
+
+  run(); // immediate first run
+  state.scanTimer = setInterval(run, 60000);
+
+  // Countdown display
+  state.scanCountdown = 60;
+  setInterval(() => {
+    if (state.scanCountdown > 0) state.scanCountdown--;
+    else state.scanCountdown = 60;
+    const el = document.getElementById('scanCountdown');
+    if (el) el.textContent = 'Next scan in ' + state.scanCountdown + 's';
+  }, 1000);
+}
+
+// ═══════════════════════════════════════════════════════════════
+// ENTER TRADE
+// ═══════════════════════════════════════════════════════════════
+
+async function enterTrade(signal) {
+  state.inTrade = true;
+
+  try {
+    // 1. Get next expiry
+    const expiry = await getNextExpiry();
+    if (!expiry) { log('No expiry found — aborting', 'error'); state.inTrade = false; return; }
+
+    // 2. Find option contract
+    const ocr = await api('option_chain', { expiry_date: expiry });
+    const contracts = ocr?.data || [];
+
+    // Select ATM+1 strike
+    const step   = 50;
+    const target = signal.signal === 'CE'
+      ? Math.ceil(state.nifty / step) * step
+      : Math.floor(state.nifty / step) * step;
+
+    let match = contracts.find(c => Number(c.strike_price) === target && c.instrument_type === signal.signal);
+
+    // Fallback: nearest available strike
+    if (!match) {
+      const same = contracts.filter(c => c.instrument_type === signal.signal);
+      match = same.sort((a, b) => Math.abs(Number(a.strike_price) - target) - Math.abs(Number(b.strike_price) - target))[0];
+      if (match) log('Nearest strike: ' + match.strike_price, 'warn');
+    }
+
+    if (!match) { log('No contract found for ' + target + ' ' + signal.signal, 'error'); state.inTrade = false; return; }
+
+    // 3. Get real option price
+    let chainPrice = match.last_price || 0;
+    if (!chainPrice) {
+      const ltr = await api('market_ltp', { instrument_key: match.instrument_key });
+      const ltd = ltr?.data || {};
+      chainPrice = ltd[match.instrument_key]?.last_price || Object.values(ltd)[0]?.last_price || 0;
+    }
+    if (!chainPrice) {
+      log('No market price for ' + match.strike_price + ' ' + signal.signal + ' — aborting', 'warn');
+      state.inTrade = false; return;
+    }
+    if (chainPrice < 10) {
+      log('Option too cheap ₹' + chainPrice + ' — aborting', 'warn');
+      state.inTrade = false; return;
+    }
+
+    log('Placing BUY: NIFTY ' + match.strike_price + ' ' + signal.signal + ' x' + LOT + ' @ ~₹' + chainPrice, 'info');
+
+    // 4. Place order
+    const or = await api('place_order', {
+      quantity:           LOT,
+      product:            'I',
+      validity:           'DAY',
+      price:              0,
+      tag:                'qe',
+      instrument_token:   match.instrument_key,
+      order_type:         'MARKET',
+      transaction_type:   'BUY',
+      disclosed_quantity: 0,
+      trigger_price:      0,
+      is_amo:             false,
+    });
+
+    if (or?.status !== 'success') {
+      log('BUY failed: ' + JSON.stringify(or?.errors || or?.message), 'error');
+      state.inTrade = false; return;
+    }
+
+    const orderId = or?.data?.order_id;
+    log('Order placed: ' + orderId, 'info');
+
+    // 5. Wait for fill
+    await sleep(3500);
+    const sr = await api('order_status', { order_id: orderId });
+    const fillData   = sr?.data || {};
+    const avgPrice   = fillData.average_price || chainPrice;
+    const realKey    = fillData.instrument_token || match.instrument_key;
+
+    log('FILL CONFIRMED: ₹' + avgPrice + ' (estimated ₹' + chainPrice + ')', 'trade');
+
+    // 6. Post-fill gap block
+    if (avgPrice > chainPrice * 1.5) {
+      log('GAP BLOCK: filled ₹' + avgPrice + ' vs estimate ₹' + chainPrice + ' — closing', 'warn');
+      await exitTrade({ instrumentKey: realKey, qty: LOT }, avgPrice, 'GAP_BLOCK');
+      state.inTrade = false; return;
+    }
+
+    // 7. Set position
+    const sl     = Math.round(avgPrice * 0.82);
+    const tgt    = Math.round(avgPrice * 1.40);
+    state.position = {
+      id:           Date.now().toString(),
+      instrument:   'NIFTY',
+      strike:       Number(match.strike_price),
+      direction:    signal.signal,
+      entryPrice:   avgPrice,
+      currentPrice: avgPrice,
+      instrumentKey: realKey,
+      expiry,
+      qty:          LOT,
+      sl,
+      target:       tgt,
+      trailLocked:  false,
+      orderId,
+      entryTime:    Date.now(),
+    };
+
+    state.tradeCount++;
+    log('POSITION OPEN: NIFTY ' + match.strike_price + ' ' + signal.signal + ' | Entry ₹' + avgPrice + ' | SL ₹' + sl + ' | Target ₹' + tgt, 'trade');
+    render();
+
+  } catch(e) {
+    log('enterTrade error: ' + e.message, 'error');
+  }
+
+  state.inTrade = false;
+}
+
+// ═══════════════════════════════════════════════════════════════
+// EXIT TRADE
+// ═══════════════════════════════════════════════════════════════
+
+async function exitTrade(pos, currentPrice, reason) {
+  try {
+    log('Closing position: ' + reason + ' @ ~₹' + currentPrice, 'info');
+
+    const or = await api('place_order', {
+      quantity:           pos.qty || LOT,
+      product:            'I',
+      validity:           'DAY',
+      price:              0,
+      tag:                'qe',
+      instrument_token:   pos.instrumentKey,
+      order_type:         'MARKET',
+      transaction_type:   'SELL',
+      disclosed_quantity: 0,
+      trigger_price:      0,
+      is_amo:             false,
+    });
+
+    const sellId = or?.data?.order_id;
+    await sleep(3500);
+
+    let exitPrice = currentPrice;
+    if (sellId) {
+      const sr = await api('order_status', { order_id: sellId });
+      if (sr?.data?.average_price > 0) exitPrice = sr.data.average_price;
+    }
+
+    // Calculate real P&L with fees
+    if (state.position) {
+      const entry  = state.position.entryPrice;
+      const rawPnl = Math.round((exitPrice - entry) * LOT);
+      const fees   = Math.round(48 + exitPrice * LOT * 0.0005 + (entry + exitPrice) * LOT * 0.00053);
+      const netPnl = rawPnl - fees;
+
+      state.dailyPnl += netPnl;
+      if (netPnl < 0) state.lastLoss = Date.now();
+
+      state.lastTrade = {
+        instrument: state.position.instrument,
+        strike:     state.position.strike,
+        direction:  state.position.direction,
+        entryPrice: entry,
+        exitPrice,
+        pnl:        netPnl,
+        reason,
+        time:       istTime(),
+      };
+
+      const mark = netPnl >= 0 ? '✅' : '❌';
+      log(mark + ' CLOSED [' + reason + ']: ₹' + entry + ' → ₹' + exitPrice + ' | P&L ' + fmtPnl(netPnl), netPnl >= 0 ? 'trade' : 'error');
+      log('Daily P&L: ' + fmtPnl(state.dailyPnl), 'info');
+    }
+
+    state.position = null;
+    render();
+
+  } catch(e) {
+    log('exitTrade error: ' + e.message, 'error');
+  }
+}
+
+// ═══════════════════════════════════════════════════════════════
+// POSITION MONITOR — runs every 15 seconds
+// ═══════════════════════════════════════════════════════════════
+
+function startPositionMonitor() {
+  if (state.posTimer) clearInterval(state.posTimer);
+
+  state.posTimer = setInterval(async () => {
+    if (!state.connected || !state.position) return;
+
+    // EOD check
+    const mins = istMins();
+    if (mins >= 910) {
+      log('EOD: Auto-closing at 3:10 PM', 'warn');
+      await exitTrade(state.position, state.position.currentPrice, 'EOD');
+      return;
+    }
+
+    // Get real LTP from positions API
+    try {
+      const pr = await api('positions');
+      const positions = pr?.data || [];
+      const pos = state.position;
+      if (!pos) return;
+
+      // Match by trading symbol
+      const sym = pos.instrument + String(pos.strike) + pos.direction;
+      const matched = positions.find(p => (p.trading_symbol || '').toUpperCase().includes(sym.toUpperCase()));
+      const ltp = matched?.last_price || 0;
+
+      if (ltp > 0) {
+        pos.currentPrice = ltp;
+        pos.unrealPnl = Math.round((ltp - pos.entryPrice) * pos.qty);
+
+        // Trail: move SL to break-even at +20%
+        if (!pos.trailLocked && ltp >= pos.entryPrice * 1.20) {
+          pos.sl = pos.entryPrice;
+          pos.trailLocked = true;
+          log('TRAIL: SL moved to break-even ₹' + pos.sl, 'trade');
+        }
+
+        // SL check
+        if (ltp <= pos.sl) {
+          log('SL HIT: LTP ₹' + ltp + ' ≤ SL ₹' + pos.sl, 'warn');
+          await exitTrade(pos, ltp, 'SL_HIT');
+          return;
+        }
+
+        // Target check
+        if (ltp >= pos.target) {
+          log('TARGET HIT: LTP ₹' + ltp + ' ≥ Target ₹' + pos.target, 'trade');
+          await exitTrade(pos, ltp, 'TARGET_HIT');
+          return;
+        }
+
+        render();
+      }
+    } catch(e) {
+      log('Position monitor error: ' + e.message, 'error');
+    }
+  }, 15000);
+}
+
+// ═══════════════════════════════════════════════════════════════
+// MANUAL CLOSE
+// ═══════════════════════════════════════════════════════════════
+
+async function manualClose() {
+  if (!state.position) return;
+  if (!confirm('Close position now?')) return;
+
+  const pos = state.position;
+  let closePrice = pos.currentPrice || pos.entryPrice;
+
+  // Try to get fresh price
+  try {
+    const ltr = await api('market_ltp', { instrument_key: pos.instrumentKey });
+    const ltd = ltr?.data || {};
+    const lv = ltd[pos.instrumentKey]?.last_price || Object.values(ltd)[0]?.last_price || 0;
+    if (lv > 0) closePrice = lv;
+  } catch(e) {}
+
+  await exitTrade(pos, closePrice, 'MANUAL');
+}
+
+// ═══════════════════════════════════════════════════════════════
+// RENDER
+// ═══════════════════════════════════════════════════════════════
+
+function render() {
+  const app = document.getElementById('app');
+  if (!app) return;
+
+  if (!state.connected) {
+    app.innerHTML = renderDisconnected();
+  } else {
+    app.innerHTML = renderConnected();
+  }
+}
+
+function renderDisconnected() {
+  return '<div class="header" style="grid-template-columns:1fr">' +
+    '<div>' +
+      '<div style="font-size:11px;color:var(--muted);letter-spacing:3px;text-transform:uppercase;margin-bottom:6px">QuantEdge</div>' +
+      '<div class="nifty-price" style="font-size:18px;color:var(--dim)">— Disconnected —</div>' +
+    '</div>' +
+  '</div>' +
+  '<div class="connect-panel">' +
+    '<div class="connect-title">Connect to Upstox</div>' +
+    '<div class="connect-form">' +
+      '<input id="tokenInput" type="password" placeholder="Upstox access token" />' +
+      '<input id="capitalInput" type="number" placeholder="Capital ₹" value="17000" />' +
+      '<button class="btn-primary" onclick="connect()">CONNECT</button>' +
+    '</div>' +
+  '</div>' +
+  renderLogs();
+}
+
+function renderConnected() {
+  return renderHeader() +
+    renderStatusCard() +
+    (state.position ? renderPositionCard() : '') +
+    (state.lastTrade ? renderLastTrade() : '') +
+    renderLogs();
+}
+
+function renderHeader() {
+  const dir = state.nifty > state.prevNifty ? 'up' : state.nifty < state.prevNifty ? 'down' : '';
+  const arrow = dir === 'up' ? ' ↑' : dir === 'down' ? ' ↓' : '';
+  const pnlClass = state.dailyPnl > 0 ? 'pnl-pos' : state.dailyPnl < 0 ? 'pnl-neg' : 'pnl-neu';
+
+  const pillClass = state.position ? 'pill-trading' : 'pill-scanning';
+  const pillText  = state.position ? 'TRADING' : 'SCANNING';
+
+  return '<div class="header">' +
+    '<div>' +
+      '<div style="font-size:9px;color:var(--muted);letter-spacing:3px;text-transform:uppercase;margin-bottom:6px">QuantEdge</div>' +
+      '<div>' +
+        '<span class="nifty-price ' + (dir === 'up' ? 'nifty-up' : dir === 'down' ? 'nifty-down' : '') + '">' +
+          '₹' + (state.nifty ? state.nifty.toLocaleString('en-IN') : '—') +
+        '</span>' +
+        '<span class="nifty-direction ' + (dir === 'up' ? 'nifty-up' : 'nifty-down') + '">' + arrow + '</span>' +
+      '</div>' +
+      '<div class="header-meta">' +
+        '<div class="meta-item"><span class="meta-label">VWAP</span><span class="meta-value">₹' + (state.vwap || '—') + '</span></div>' +
+        '<div class="meta-item"><span class="meta-label">Balance</span><span class="meta-value">₹' + (state.capital ? Math.round(state.capital).toLocaleString('en-IN') : '—') + '</span></div>' +
+        '<div class="meta-item"><span class="meta-label">Day P&L</span><span class="meta-value ' + pnlClass + '">' + fmtPnl(state.dailyPnl) + '</span></div>' +
+        '<div class="meta-item"><span class="meta-label">Trades</span><span class="meta-value">' + state.tradeCount + '/2</span></div>' +
+      '</div>' +
+    '</div>' +
+    '<div class="header-right">' +
+      '<span class="status-pill ' + pillClass + '"><span class="dot"></span>' + pillText + '</span>' +
+      '<button class="btn-ghost" onclick="disconnect()" style="font-size:10px;padding:5px 10px">DISCONNECT</button>' +
+    '</div>' +
+  '</div>';
+}
+
+function renderStatusCard() {
+  const s = state.lastSignal;
+  if (!s) {
+    return '<div class="status-card"><div class="waiting">Fetching market data...</div></div>';
+  }
+
+  const regime = s.regime || 'CHOPPY';
+  const regClass = regime === 'TRENDING' ? 'regime-trending' : regime === 'DEVELOPING' ? 'regime-developing' : 'regime-choppy';
+
+  const ceScore = s.details?.ceScore || 0;
+  const peScore = s.details?.peScore || 0;
+
+  return '<div class="status-card">' +
+    '<div class="status-card-header">' +
+      '<span style="font-size:11px;color:var(--dim)">Signal Engine</span>' +
+      '<div style="display:flex;gap:8px;align-items:center">' +
+        '<span class="regime-badge ' + regClass + '">' + regime + '</span>' +
+        '<span style="font-size:10px;color:var(--muted)">ATR:' + (s.details?.atr || '—') + '</span>' +
+      '</div>' +
+    '</div>' +
+
+    (s.signal
+      ? '<div style="background:' + (s.signal==='CE'?'var(--green-bg)':'var(--red-bg)') + ';border:1px solid ' + (s.signal==='CE'?'#1F4428':'#4A1515') + ';border-radius:6px;padding:10px 12px;margin-bottom:10px;font-size:12px;color:' + (s.signal==='CE'?'var(--green)':'var(--red)') + ';font-weight:700">SIGNAL: ' + s.signal + ' ' + s.score + '%</div>'
+      : (s.reason ? '<div style="font-size:10px;color:var(--dim);margin-bottom:10px;padding:8px 0">⏸ ' + s.reason + '</div>' : '')
+    ) +
+
+    '<div class="score-row">' +
+      '<div class="score-box"><div class="score-label">CE Score</div><div class="score-val score-ce">' + ceScore + '</div></div>' +
+      '<div class="score-box"><div class="score-label">PE Score</div><div class="score-val score-pe">' + peScore + '</div></div>' +
+    '</div>' +
+
+    (s.reasons?.length
+      ? '<div class="reasons-list">' + s.reasons.slice(0, 5).map(r => '· ' + r).join('<br>') + '</div>'
+      : '') +
+
+    '<div class="scan-timer" id="scanCountdown">Next scan in ' + state.scanCountdown + 's</div>' +
+  '</div>';
+}
+
+function renderPositionCard() {
+  const p = state.position;
+  const ltp = p.currentPrice || p.entryPrice;
+  const pnl = p.unrealPnl || 0;
+  const pnlClass = pnl > 0 ? 'pnl-pos' : pnl < 0 ? 'pnl-neg' : 'pnl-neu';
+  const gain = ((ltp - p.entryPrice) / p.entryPrice * 100).toFixed(1);
+  const cardClass = p.direction === 'CE' ? 'pos-ce' : 'pos-pe';
+
+  // SL proximity: 0% = at SL, 100% = far away
+  const range = p.entryPrice - p.sl;
+  const dist  = ltp - p.sl;
+  const slPct = range > 0 ? Math.max(0, Math.min(100, dist / range * 100)) : 100;
+  const barClass = slPct < 20 ? 'sl-danger' : slPct < 50 ? 'sl-warn' : 'sl-safe';
+
+  const expiryShort = p.expiry ? p.expiry.slice(5).replace('-', ' ') : '';
+  const heldMins = Math.round((Date.now() - p.entryTime) / 60000);
+
+  return '<div class="position-card ' + cardClass + '">' +
+    '<div class="pos-header">' +
+      '<div>' +
+        '<div class="pos-name">NIFTY <span style="color:' + (p.direction==='CE'?'var(--green)':'var(--red)') + '">' + p.strike + ' ' + p.direction + '</span></div>' +
+        '<div class="pos-expiry">NFO ' + expiryShort + ' · Intraday · ' + heldMins + 'min' + (p.trailLocked ? ' · 🔒 SL locked' : '') + '</div>' +
+      '</div>' +
+      '<div>' +
+        '<div class="pos-pnl ' + pnlClass + '">' + (pnl === 0 ? '---' : fmtPnl(pnl)) + '</div>' +
+        '<div style="font-size:10px;color:var(--dim);text-align:right">' + gain + '%</div>' +
+      '</div>' +
+    '</div>' +
+
+    '<div class="pos-grid">' +
+      '<div><div class="pos-metric-label">Entry</div><div class="pos-metric-val">₹' + p.entryPrice.toFixed(2) + '</div></div>' +
+      '<div><div class="pos-metric-label">Live</div><div class="pos-metric-val pos-live-val">' + (ltp ? '₹' + ltp.toFixed(2) : '---') + '</div></div>' +
+      '<div><div class="pos-metric-label">Stop Loss</div><div class="pos-metric-val pos-sl-val">₹' + p.sl + '</div></div>' +
+      '<div><div class="pos-metric-label">Target</div><div class="pos-metric-val pos-target-val">₹' + p.target + '</div></div>' +
+    '</div>' +
+
+    '<div class="sl-bar"><div class="sl-fill ' + barClass + '" style="width:' + slPct + '%"></div></div>' +
+
+    '<button class="btn-danger" onclick="manualClose()" style="width:100%">CLOSE MANUALLY</button>' +
+  '</div>';
+}
+
+function renderLastTrade() {
+  const t = state.lastTrade;
+  const pnlClass = t.pnl >= 0 ? 'pnl-pos' : 'pnl-neg';
+  return '<div class="last-trade">' +
+    '<div class="last-trade-title">Last Trade</div>' +
+    '<div class="last-trade-row">' +
+      '<div>' +
+        '<div class="last-trade-name">NIFTY ' + t.strike + ' ' + t.direction + '</div>' +
+        '<div class="last-trade-meta">₹' + t.entryPrice.toFixed(2) + ' → ₹' + t.exitPrice.toFixed(2) + ' · ' + t.reason + ' · ' + t.time + '</div>' +
+      '</div>' +
+      '<div class="' + pnlClass + '" style="font-weight:700">' + fmtPnl(t.pnl) + '</div>' +
+    '</div>' +
+  '</div>';
+}
+
+function renderLogs() {
+  const logRows = state.logs.slice(0, 25).map(l =>
+    '<div class="log-entry">' +
+      '<span class="log-time">' + l.time + '</span>' +
+      '<span class="log-' + l.level + '">' + l.msg + '</span>' +
+    '</div>'
+  ).join('');
+
+  return '<div class="logs-section">' +
+    '<div class="logs-header">' +
+      '<span class="logs-title">Activity</span>' +
+      '<button class="btn-ghost" onclick="downloadLogs()" style="font-size:9px;padding:3px 8px">⬇ Download</button>' +
+    '</div>' +
+    (logRows || '<div class="waiting">No activity yet</div>') +
+  '</div>';
+}
+
+function downloadLogs() {
+  const text = state.logs.map(l => l.time + ' [' + l.level.toUpperCase() + '] ' + l.msg).join('\n');
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(new Blob([text], { type: 'text/plain' }));
+  a.download = 'qe-logs-' + new Date().toISOString().slice(0,10) + '.txt';
+  a.click();
+}
+
+// ═══════════════════════════════════════════════════════════════
+// INIT
+// ═══════════════════════════════════════════════════════════════
+render();
+</script>
+</body>
+</html>
